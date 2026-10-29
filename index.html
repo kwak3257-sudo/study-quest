@@ -4534,7 +4534,7 @@ function openAdmin(){
 // 칸(옷·머리·얼굴·손·펫·날개·배경·효과)마다 하나씩 입는다. 눌러서 먼저 입어 보고, 사거나 목표로 찜한다.
 (function(){
 const st=document.createElement('style');st.textContent=`
-.wtabs{display:flex;gap:6px;overflow-x:auto;padding:2px 0 8px;scrollbar-width:none}.wtabs::-webkit-scrollbar{display:none}
+.wtabs{display:flex;flex-wrap:wrap;gap:6px;padding:2px 0 8px}.wtabs::-webkit-scrollbar{display:none}
 .wtabs button{flex:none;border:2px solid var(--line);background:var(--card);border-radius:999px;padding:6px 12px;font-size:14px;font-weight:700;color:var(--ink)}
 .wtabs button.on{border-color:var(--pen);background:var(--pen);color:#fff}
 .witems{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
@@ -4751,7 +4751,7 @@ window.__shop={COLORS,ITEMS,GIFT};
 (function(){
 const st=document.createElement('style');st.textContent=`
 .avsw{display:flex;gap:8px;margin:0 0 12px}.avsw .btn{flex:1}.avsw .btn.on{outline:3px solid var(--pen)}
-.avtabs{display:flex;gap:6px;overflow-x:auto;padding:2px 0 8px;scrollbar-width:none}.avtabs::-webkit-scrollbar{display:none}
+.avtabs{display:flex;flex-wrap:wrap;gap:6px;padding:2px 0 8px}.avtabs::-webkit-scrollbar{display:none}
 .avtabs button{flex:none;border:2px solid var(--line);background:var(--card);border-radius:999px;padding:6px 12px;font-size:14px;font-weight:700;color:var(--ink)}
 .avtabs button.on{border-color:var(--pen);background:var(--pen);color:#fff}
 .avopts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
