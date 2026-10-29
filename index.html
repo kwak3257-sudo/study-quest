@@ -4733,8 +4733,11 @@ function wear(k,on){if(COLORS[k])S.char.color=k;else{const s=ITEMS[k].s;S.char.w
 
 // 시작 선물: 기본 아이템을 다 살 수 있는 만큼
 const BASIC=Object.keys(COLORS).filter(k=>!COLORS[k].t).map(k=>COLORS[k].p).concat(Object.values(ITEMS).filter(x=>!x.t).map(x=>x.p)).reduce((a,b)=>a+b,0);
-const GIFT=Math.ceil(BASIC/100)*100;
-function gift(){if(S.gift1)return;ensure();S.gift1=1;S.coins+=GIFT;save();document.querySelectorAll('#pCoin .num,#pCoin2 .num').forEach(x=>x.textContent=S.coins);
+const OLDGIFT=Math.ceil(BASIC/100)*100,GIFT=2000; // 보호자 요청(2026-10-29): 시작 선물 2000코인
+// 예전 선물(OLDGIFT)을 이미 받은 사람은 모자란 만큼 한 번 더 채워 준다
+function topup(){if(!S.gift1||S.gift2||GIFT<=OLDGIFT)return;S.gift2=1;ensure();S.coins+=GIFT-OLDGIFT;save();document.querySelectorAll('#pCoin .num,#pCoin2 .num').forEach(x=>x.textContent=S.coins);
+  modal({e:'🎁',t:'선물 추가 🪙'+(GIFT-OLDGIFT),b:'시작 선물이 🪙'+GIFT+'으로 늘었어요! 옷장에서 마음에 드는 걸 골라 보세요.'})}
+function gift(){topup();if(S.gift1)return;ensure();S.gift1=1;S.gift2=1;S.coins+=GIFT;save();document.querySelectorAll('#pCoin .num,#pCoin2 .num').forEach(x=>x.textContent=S.coins);
   modal({e:'🎁',t:'시작 선물 🪙'+GIFT,b:'나·상점의 옷장에서 기본 옷과 아이템을 마음껏 골라 보세요!<br><span class="muted">💜 고급 · 🌟 전설 아이템은 공부해서 코인을 모으면 살 수 있어요</span>'})}
 const _rh=renderHome;renderHome=function(){_rh.apply(this,arguments);gift();
   const g=S.char&&S.char.goal,cc=document.getElementById('charCard');
