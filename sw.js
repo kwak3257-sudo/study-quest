@@ -1,5 +1,5 @@
 // 앱 껍데기를 저장해 두고 오프라인에서도 열리게 한다. 대화방(/ws)은 항상 네트워크.
-const CACHE='sq-v27';
+const CACHE='sq-v28';
 const SHELL=['./','index.html','manifest.webmanifest','icons/icon-192.png','icons/icon-512.png','icons/apple-touch-icon.png'];
 const HOME=new URL('index.html',self.registration.scope).href;
 self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(SHELL)));self.skipWaiting()});
