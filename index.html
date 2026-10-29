@@ -6107,6 +6107,158 @@ const apply=()=>{const t=!document.documentElement.classList.contains('kid');doc
 apply();new MutationObserver(apply).observe(document.documentElement,{attributes:true,attributeFilter:['class']});
 }
 
+/* ───────── 문제 그림: 도형·좌표·회로·빛 문제에 그림을 붙인다 ───────── */
+// 문제 글에서 수를 읽어 그린다. 답이 되는 값은 그리지 않고 "?"로 둔다. 도형은 직각삼각형·좌표·빛 말고는 실제 크기와 다를 수 있다.
+{
+const N=s=>+String(s).replace(/−/g,'-').replace(/,/g,'');
+const R=n=>Math.round(n*10)/10;
+const W=260,H=170;
+const svg=(body,h=H,note)=>`<figure class="qfig"><svg viewBox="0 0 ${W} ${h}" role="img" aria-label="문제 그림">${body}</svg>${note?`<figcaption>${note}</figcaption>`:''}</figure>`;
+const ln=(a,b,c='')=>`<line x1="${R(a[0])}" y1="${R(a[1])}" x2="${R(b[0])}" y2="${R(b[1])}" class="${c}"/>`;
+const pg=(ps,c='')=>`<polygon points="${ps.map(p=>R(p[0])+','+R(p[1])).join(' ')}" class="${c}"/>`;
+const tx=(p,s,c='',a='middle')=>`<text x="${R(p[0])}" y="${R(p[1])}" text-anchor="${a}" dominant-baseline="middle" class="${c}">${String(s).replace(/[<>&]/g,'')}</text>`;
+const dot=(p,c='')=>`<circle cx="${R(p[0])}" cy="${R(p[1])}" r="3" class="pt ${c}"/>`;
+const mid=(a,b)=>[(a[0]+b[0])/2,(a[1]+b[1])/2];
+const sub=(a,b)=>[a[0]-b[0],a[1]-b[1]],add=(a,b)=>[a[0]+b[0],a[1]+b[1]],mul=(a,k)=>[a[0]*k,a[1]*k],len=a=>Math.hypot(a[0],a[1]),unit=a=>mul(a,1/(len(a)||1));
+const cen=ps=>[ps.reduce((s,p)=>s+p[0],0)/ps.length,ps.reduce((s,p)=>s+p[1],0)/ps.length];
+const away=(p,c,d)=>add(p,mul(unit(sub(p,c)),d));
+// 변 이름표: 변의 가운데에서 도형 바깥쪽으로
+const side=(a,b,c0,s,cl='',d=10)=>{const m=mid(a,b),n=unit([-(b[1]-a[1]),b[0]-a[0]]),o=len(sub(add(m,n),c0))>len(sub(m,c0))?n:mul(n,-1);return tx(add(m,mul(o,Math.abs(o[1])>.7?d+3:d)),s,cl,o[0]<-.5?'end':o[0]>.5?'start':'middle')};
+// 각 표시: 꼭짓점 v에서 두 변 사이 호 + 글자
+const ang=(v,p,q,s,cl='',r=16)=>{const u1=unit(sub(p,v)),u2=unit(sub(q,v)),a1=add(v,mul(u1,r)),a2=add(v,mul(u2,r)),cr=u1[0]*u2[1]-u1[1]*u2[0];
+  const bis=unit(add(u1,u2));return `<path d="M${R(a1[0])} ${R(a1[1])} A${r} ${r} 0 0 ${cr>0?1:0} ${R(a2[0])} ${R(a2[1])}" class="arc ${cl}"/>`+(s?tx(add(v,mul(bis,r+13)),s,cl):'')};
+const rt=(v,p,q,k=9)=>{const u1=mul(unit(sub(p,v)),k),u2=mul(unit(sub(q,v)),k);return `<path d="M${R(v[0]+u1[0])} ${R(v[1]+u1[1])} L${R(v[0]+u1[0]+u2[0])} ${R(v[1]+u1[1]+u2[1])} L${R(v[0]+u2[0])} ${R(v[1]+u2[1])}" class="thin"/>`};
+const tick=(a,b,n=1)=>{const m=mid(a,b),d=unit(sub(b,a)),nn=[-d[1],d[0]];let s='';for(let i=0;i<n;i++){const c=add(m,mul(d,(i-(n-1)/2)*4));s+=ln(add(c,mul(nn,5)),add(c,mul(nn,-5)),'thin')}return s};
+const vlab=(ps,names)=>{const c=cen(ps);return ps.map((p,i)=>names[i]?tx(away(p,c,12),names[i],'vx'):'').join('')};
+const Q='?';
+// 크기에 맞춰 넣기
+const fit=(ps,pad=26,h=H)=>{const xs=ps.map(p=>p[0]),ys=ps.map(p=>p[1]),x0=Math.min(...xs),x1=Math.max(...xs),y0=Math.min(...ys),y1=Math.max(...ys);
+  const k=Math.min((W-2*pad)/((x1-x0)||1),(h-2*pad)/((y1-y0)||1)),ox=(W-(x1-x0)*k)/2,oy=(h-(y1-y0)*k)/2;return ps.map(p=>[ox+(p[0]-x0)*k,oy+(y1-p[1])*k])};
+
+const F=[];const on=(re,fn)=>F.push([re,fn]);
+
+/* ── 피타고라스 ── */
+on(/빗변의 길이가 ([\d.]+) ?(cm|m)?이고 한 변의 길이가 ([\d.]+) ?(cm|m)?인 직각삼각형의 나머지 한 변/,m=>{const c=N(m[1]),a=N(m[3]),b=Math.sqrt(Math.max(c*c-a*a,1)),u=m[2]||'';
+  const [C,B,A]=fit([[0,0],[a,0],[0,b]]);return svg(pg([A,B,C],'sh')+rt(C,B,A)+side(C,B,cen([A,B,C]),a+' '+u)+side(C,A,cen([A,B,C]),Q,'q')+side(A,B,cen([A,B,C]),c+' '+u,'hl'))});
+on(/직각을 낀 두 변의 길이가 ([\d.]+) ?(cm|m)?, ([\d.]+) ?(cm|m)?인 직각삼각형의 빗변/,m=>{const a=N(m[1]),b=N(m[3]),u=m[2]||'';
+  const [C,B,A]=fit([[0,0],[a,0],[0,b]]);return svg(pg([A,B,C],'sh')+rt(C,B,A)+side(C,B,cen([A,B,C]),a+' '+u)+side(C,A,cen([A,B,C]),b+' '+u)+side(A,B,cen([A,B,C]),Q,'q'))});
+on(/가로 ([\d.]+) ?(cm|m)?, 세로 ([\d.]+) ?(cm|m)?인 직사각형의 대각선/,m=>{const a=N(m[1]),b=N(m[3]),u=m[2]||'';
+  const [A,B,C,D]=fit([[0,b],[0,0],[a,0],[a,b]]);return svg(pg([A,B,C,D],'sh')+ln(B,D,'hl')+side(B,C,cen([A,B,C,D]),a+' '+u)+side(A,B,cen([A,B,C,D]),b+' '+u)+tx(add(mid(B,D),[10,-10]),Q,'q'))});
+// 좌표평면 위 두 점
+const plane=(pts,extra='',lab=true)=>{const xs=pts.map(p=>p[0]).concat(0),ys=pts.map(p=>p[1]).concat(0),m=Math.max(4,...xs.map(Math.abs),...ys.map(Math.abs))+1,k=Math.min(110/m,72/m),O=[130,85];
+  const P=p=>[O[0]+p[0]*k,O[1]-p[1]*k];let g='';for(let i=-m;i<=m;i++){g+=ln(P([i,-m]),P([i,m]),'grid')+ln(P([-m,i]),P([m,i]),'grid')}
+  return {P,body:g+ln(P([-m,0]),P([m,0]),'ax')+ln(P([0,-m]),P([0,m]),'ax')+tx(add(P([m,0]),[8,0]),'x','vx')+tx(add(P([0,m]),[0,-8]),'y','vx')+tx(add(O,[-8,9]),'O','vx sm')+extra}};
+on(/두 점 A\((−?[\d.]+), (−?[\d.]+)\), B\((−?[\d.]+), (−?[\d.]+)\) 사이의 거리/,m=>{const a=[N(m[1]),N(m[2])],b=[N(m[3]),N(m[4])],pl=plane([a,b]),A=pl.P(a),B=pl.P(b),C=pl.P([b[0],a[1]]);
+  return svg(pl.body+ln(A,C,'thin dash')+ln(C,B,'thin dash')+ln(A,B,'hl')+dot(A)+dot(B)+tx(add(A,[0,-10]),`A(${m[1]}, ${m[2]})`,'sm')+tx(add(B,[0,-10]),`B(${m[3]}, ${m[4]})`,'sm')+tx(add(mid(A,B),[10,-6]),Q,'q'))});
+on(/x절편이 (−?[\d.]+), y절편이 (−?[\d.]+)인 일차함수의 그래프와 x축, y축으로 둘러싸인 삼각형/,m=>{const a=N(m[1]),b=N(m[2]),pl=plane([[a,0],[0,b]]),A=pl.P([a,0]),B=pl.P([0,b]),O=pl.P([0,0]);
+  return svg(pl.body+pg([O,A,B],'fillq')+ln(add(A,mul(unit(sub(A,B)),22)),add(B,mul(unit(sub(B,A)),22)),'hl')+dot(A)+dot(B)+tx(add(A,[0,b>0?11:-11]),m[1],'sm')+tx(add(B,[a>0?-12:12,0]),m[2],'sm'))});
+on(/점 \((−?[\d.]+), (−?[\d.]+)\)를 지나고 ([xy])축에 평행한 직선/,m=>{const p=[N(m[1]),N(m[2])],pl=plane([p]),P=pl.P(p);return svg(pl.body+dot(P,'hlp')+tx(add(P,[0,-11]),`(${m[1]}, ${m[2]})`,'sm'),H,`${m[3]}축에 평행한 직선은 이 점을 지나 ${m[3]==='x'?'가로':'세로'}로 그어져요`)});
+
+/* ── 이등변삼각형 ── */
+const ISO=()=>{const A=[130,20],B=[48,148],C=[212,148];return {A,B,C,c:cen([A,B,C]),base:pg([A,B,C],'sh')+tick(A,B)+tick(A,C)+vlab([A,B,C],['A','B','C'])}};
+on(/AB = AC인 이등변삼각형 ABC에서 ∠B = ([\d.]+)°일 때 꼭지각 ∠A/,m=>{const t=ISO();return svg(t.base+ang(t.B,t.C,t.A,m[1]+'°','hl')+ang(t.A,t.B,t.C,Q,'q'))});
+on(/AB = AC인 이등변삼각형 ABC에서 꼭지각 ∠A = ([\d.]+)°일 때 ∠B/,m=>{const t=ISO();return svg(t.base+ang(t.A,t.B,t.C,m[1]+'°','hl')+ang(t.B,t.C,t.A,Q,'q'))});
+on(/AB = AC인 이등변삼각형 ABC에서 ∠A = ([\d.]+)°일 때, ∠C의 외각/,m=>{const t=ISO(),E=[250,148];return svg(t.base+ln(t.C,E,'thin dash')+ang(t.A,t.B,t.C,m[1]+'°','hl')+ang(t.C,E,t.A,Q,'q',14))});
+on(/꼭지각의 이등분선이 밑변 BC와 만나는 점을 D라 해요. BC = ([\d.]+) ?cm/,m=>{const t=ISO(),D=mid(t.B,t.C);return svg(t.base+ln(t.A,D,'hl')+rt(D,t.C,t.A)+tx(add(D,[0,12]),'D','vx')+tx(add(mid(t.B,D),[0,-9]),Q,'q')+`<path d="M${t.B[0]} 162 L${t.C[0]} 162 M${t.B[0]} 157 v10 M${t.C[0]} 157 v10" class="thin"/>`+tx([130,176],'BC = '+m[1]+' cm','sm'),184)});
+
+/* ── 외심·내심 ── */
+const circum=(A,B,C)=>{const d=2*(A[0]*(B[1]-C[1])+B[0]*(C[1]-A[1])+C[0]*(A[1]-B[1])),s=p=>p[0]*p[0]+p[1]*p[1];return [(s(A)*(B[1]-C[1])+s(B)*(C[1]-A[1])+s(C)*(A[1]-B[1]))/d,(s(A)*(C[0]-B[0])+s(B)*(A[0]-C[0])+s(C)*(B[0]-A[0]))/d]};
+on(/점 O가 예각삼각형 ABC의 외심이고 ∠A = ([\d.]+)°일 때 ∠BOC/,m=>{const A=[105,18],B=[35,150],C=[225,150],O=circum(A,B,C),r=len(sub(A,O));
+  return svg(`<circle cx="${R(O[0])}" cy="${R(O[1])}" r="${R(r)}" class="thin dash"/>`+pg([A,B,C],'sh')+ln(O,B,'hl')+ln(O,C,'hl')+dot(O)+tx(add(O,[0,-11]),'O','vx')+vlab([A,B,C],['A','B','C'])+ang(A,B,C,m[1]+'°','hl')+ang(O,B,C,Q,'q',13),H)});
+on(/내접원의 반지름이 ([\d.]+) ?cm이고 둘레의 길이가 ([\d.]+) ?cm인 삼각형의 넓이/,m=>{const A=[95,18],B=[30,150],C=[230,150],a=len(sub(B,C)),b=len(sub(A,C)),c=len(sub(A,B)),s=a+b+c,I=[(a*A[0]+b*B[0]+c*C[0])/s,(a*A[1]+b*B[1]+c*C[1])/s],r=150-I[1];
+  return svg(pg([A,B,C],'sh')+`<circle cx="${R(I[0])}" cy="${R(I[1])}" r="${R(r)}" class="hl nof"/>`+dot(I)+ln(I,[I[0],150],'hl')+tx([I[0]+22,I[1]+r/2],'r = '+m[1],'sm hl')+tx([I[0]-6,I[1]-9],'I','vx'),H,`둘레 ${m[2]} cm · 넓이는 ?`)});
+on(/세 변의 길이가 ([\d.]+) ?cm, ([\d.]+) ?cm, ([\d.]+) ?cm인 직각삼각형의 외접원의 반지름/,m=>{const v=[N(m[1]),N(m[2]),N(m[3])].sort((x,y)=>x-y),O=[130,90],r=68,t=Math.atan2(v[1],v[0]);
+  const A=[O[0]-r,O[1]],B=[O[0]+r,O[1]],C=[O[0]-r+2*r*Math.cos(t)**2,O[1]-2*r*Math.cos(t)*Math.sin(t)];
+  return svg(`<circle cx="${O[0]}" cy="${O[1]}" r="${r}" class="thin"/>`+pg([A,B,C],'sh')+rt(C,A,B)+side(A,C,O,v[0]+' cm')+side(C,B,O,v[1]+' cm')+tx([O[0],O[1]+13],v[2]+' cm','sm')+ln(O,[O[0]+r*Math.cos(-.9),O[1]-r*Math.sin(-.9)],'hl')+tx([O[0]+32,O[1]+30],'r = ?','q'),H)});
+
+/* ── 사각형 ── */
+const PAR=()=>{const A=[78,30],B=[38,142],C=[204,142],D=[244,30];return {A,B,C,D,c:cen([A,B,C,D]),base:pg([A,B,C,D],'sh')+vlab([A,B,C,D],['A','B','C','D'])}};
+on(/평행사변형 ABCD에서 ∠A = ([\d.]+)°일 때 ∠([BC])의 크기/,m=>{const t=PAR(),V={B:[t.B,t.C,t.A],C:[t.C,t.D,t.B]}[m[2]];return svg(t.base+ang(t.A,t.D,t.B,m[1]+'°','hl')+ang(V[0],V[1],V[2],Q,'q'))});
+on(/평행사변형 ABCD에서 ∠A = \(([\d.]+)x \+ ([\d.]+)\)°, ∠C = ([\d.]+)°/,m=>{const t=PAR();return svg(t.base+ang(t.A,t.D,t.B,`(${m[1]}x + ${m[2]})°`,'hl',16)+ang(t.C,t.B,t.D,m[3]+'°','hl'))});
+on(/평행사변형 ABCD에서 AB = ([\d.]+) ?cm, BC = ([\d.]+) ?cm일 때 둘레/,m=>{const t=PAR();return svg(t.base+side(t.A,t.B,t.c,m[1]+' cm')+side(t.B,t.C,t.c,m[2]+' cm'),H,'둘레는 ?')});
+on(/평행사변형 ABCD의 두 대각선의 교점을 O라 할 때, AO = ([\d.]+) ?cm이면 AC/,m=>{const t=PAR(),O=mid(t.A,t.C);return svg(t.base+ln(t.A,t.C,'hl')+ln(t.B,t.D,'thin')+dot(O)+tx(add(O,[0,13]),'O','vx')+side(t.A,O,t.B,m[1]+' cm','hl',11),H,'AC는 ?')});
+on(/넓이가 ([\d.]+) ?cm²인 평행사변형 ABCD의 내부에 한 점 P/,m=>{const t=PAR(),P=[150,92];return svg(t.base+pg([P,t.A,t.B],'fillq')+pg([P,t.C,t.D],'fillq')+ln(P,t.A,'thin')+ln(P,t.B,'thin')+ln(P,t.C,'thin')+ln(P,t.D,'thin')+dot(P)+tx(add(P,[0,-11]),'P','vx'),H,`평행사변형 넓이 ${m[1]} cm² · 색칠한 두 삼각형의 넓이 합은 ?`)});
+on(/두 대각선의 길이가 ([\d.]+) ?cm, ([\d.]+) ?cm인 마름모의 넓이/,m=>{const A=[130,16],B=[50,86],C=[130,156],D=[210,86];return svg(pg([A,B,C,D],'sh')+ln(A,C,'hl dash')+ln(B,D,'hl dash')+tx([142,52],m[1]+' cm','sm hl','start')+tx([88,78],m[2]+' cm','sm hl')+tick(A,B)+tick(B,C)+tick(C,D)+tick(D,A),H,'넓이는 ?')});
+on(/마름모 ABCD의 두 대각선의 교점을 O라 할 때 ∠OAB = ([\d.]+)°이면 ∠OBA/,m=>{const A=[130,16],B=[50,86],C=[130,156],D=[210,86],O=[130,86];return svg(pg([A,B,C,D],'sh')+ln(A,C,'thin')+ln(B,D,'thin')+rt(O,A,D,8)+vlab([A,B,C,D],['A','B','C','D'])+tx(add(O,[9,11]),'O','vx sm')+ang(A,B,O,m[1]+'°','hl',18)+ang(B,O,A,Q,'q',18))});
+on(/직사각형 ABCD의 두 대각선의 교점을 O라 할 때, AC = ([\d.]+) ?cm이면 OB/,m=>{const A=[40,25],B=[40,145],C=[220,145],D=[220,25],O=mid(A,C);return svg(pg([A,B,C,D],'sh')+rt(B,A,C)+ln(A,C,'hl')+ln(B,D,'thin')+vlab([A,B,C,D],['A','B','C','D'])+tx(add(O,[0,-11]),'O','vx sm')+tx(add(mid(O,B),[-4,10]),Q,'q'),H,`AC = ${m[1]} cm`)});
+on(/AD ∥ BC인 사다리꼴 ABCD에서 △ABC의 넓이가 ([\d.]+) ?cm²일 때, △DBC/,m=>{const A=[85,30],D=[180,30],B=[30,145],C=[232,145];return svg(pg([A,B,C,D],'sh')+pg([A,B,C],'fillq')+ln(A,C,'hl')+ln(D,B,'thin dash')+vlab([A,B,C,D],['A','B','C','D'])+`<path d="M128 25 l5 5 l-5 5 M126 140 l5 5 l-5 5" class="thin"/>`,H,`△ABC(색칠) = ${m[1]} cm² · △DBC는 ?`)});
+
+/* ── 닮음 ── */
+on(/△ABC에서 두 변 AB, AC의 중점을 각각 M, N이라 할 때, BC = ([\d.]+) ?cm이면 MN/,m=>{const A=[125,18],B=[35,150],C=[225,150],M=mid(A,B),N2=mid(A,C);return svg(pg([A,B,C],'sh')+ln(M,N2,'hl')+tick(A,M)+tick(M,B)+tick(A,N2,2)+tick(N2,C,2)+vlab([A,B,C],['A','B','C'])+tx(add(M,[-12,0]),'M','vx')+tx(add(N2,[12,0]),'N','vx')+tx(add(mid(M,N2),[0,-9]),Q,'q')+side(B,C,cen([A,B,C]),m[1]+' cm'))});
+on(/넓이가 ([\d.]+) ?cm²인 △ABC의 무게중심 G와 세 꼭짓점, 세 변의 중점을 이어 만든 작은 삼각형/,m=>{const A=[125,18],B=[35,150],C=[225,150],G=cen([A,B,C]),D=mid(B,C),E=mid(A,C),Fp=mid(A,B);
+  return svg(pg([A,B,C],'sh')+pg([G,B,D],'fillq')+ln(A,D,'thin')+ln(B,E,'thin')+ln(C,Fp,'thin')+dot(G)+tx(add(G,[10,-6]),'G','vx')+vlab([A,B,C],['A','B','C']),H,`△ABC = ${m[1]} cm² · 색칠한 작은 삼각형은 ?`)});
+on(/점 G가 △ABC의 무게중심이고 중선 AD의 길이가 ([\d.]+) ?cm일 때 AG/,m=>{const A=[125,18],B=[35,150],C=[225,150],D=mid(B,C),G=cen([A,B,C]);return svg(pg([A,B,C],'sh')+ln(A,D,'hl')+tick(B,D)+tick(D,C)+dot(G)+tx(add(G,[10,0]),'G','vx')+tx(add(D,[0,12]),'D','vx')+vlab([A,B,C],['A','B','C'])+tx(add(mid(A,G),[-10,0]),Q,'q'),H,`AD = ${m[1]} cm`)});
+on(/세 평행선 l, m, n이 두 직선과 만나 생긴 선분의 길이가 각각 ([\d.]+), ([\d.]+) 그리고 ([\d.]+), x일 때/,m=>{const a=N(m[1]),b=N(m[2]),y0=22,y2=150,y1=y0+(y2-y0)*a/(a+b);
+  const P1=[[60,y0],[60+40*(y1-y0)/(y2-y0),y1],[100,y2]],P2=[[150,y0],[150+70*(y1-y0)/(y2-y0),y1],[220,y2]];
+  return svg([y0,y1,y2].map((y,i)=>ln([20,y],[244,y],'thin')+tx([250,y],'lmn'[i],'vx sm')).join('')+ln(P1[0],P1[2],'hl')+ln(P2[0],P2[2],'hl')+side(P1[0],P1[1],[200,0],m[1])+side(P1[1],P1[2],[200,0],m[2])+side(P2[0],P2[1],[0,0],m[3])+side(P2[1],P2[2],[0,0],'x','q'))});
+
+/* ── 빛의 반사 ── */
+const mirror=(th,lab1,lab2,mode)=>{const P=[130,128],L=96,r=th*Math.PI/180,In=[P[0]-L*Math.sin(r),P[1]-L*Math.cos(r)],Out=[P[0]+L*Math.sin(r),P[1]-L*Math.cos(r)];
+  let h='';for(let x=30;x<=230;x+=12)h+=ln([x,P[1]],[x-8,P[1]+9],'thin');
+  return svg(ln([24,P[1]],[236,P[1]],'ax')+h+ln(P,[P[0],P[1]-108],'thin dash')+tx([P[0],12],'법선','sm')+`<line x1="${R(In[0])}" y1="${R(In[1])}" x2="${P[0]}" y2="${P[1]}" class="hl ray"/>`+`<line x1="${P[0]}" y1="${P[1]}" x2="${R(Out[0])}" y2="${R(Out[1])}" class="hl ray"/>`+
+    (mode==='surf'?ang(P,[24,P[1]],In,lab1,'hl',26)+(th<30?ang(P,In,[P[0],20],'','q',48)+tx([P[0]-34,P[1]-70],lab2,'q','end'):ang(P,In,[P[0],20],lab2,'q',36)):th<30?ang(P,In,[P[0],20],'','hl',44)+ang(P,[P[0],20],Out,'','q',56)+tx([P[0]-30,P[1]-64],lab1,'hl','end')+tx([P[0]+30,P[1]-64],lab2,'q','start'):ang(P,In,[P[0],20],lab1,'hl',30)+ang(P,[P[0],20],Out,lab2,'q',30))+tx([206,146],'거울','sm'),160)};
+on(/빛이 평면거울에 입사각 ([\d.]+)°로 들어갈 때 반사각/,m=>mirror(N(m[1]),m[1]+'°',Q));
+on(/빛이 거울 면과 ([\d.]+)°를 이루며 들어갈 때 입사각/,m=>mirror(90-N(m[1]),m[1]+'°',Q,'surf'));
+
+/* ── 전기 회로 ── */
+const res=(a,b,s)=>{const m=mid(a,b),h=a[1]===b[1];return ln(a,add(m,h?[-18,0]:[0,-18]))+ln(add(m,h?[18,0]:[0,18]),b)+`<rect x="${R(m[0]-(h?18:7))}" y="${R(m[1]-(h?7:18))}" width="${h?36:14}" height="${h?14:36}" rx="2" class="res"/>`+(s?tx(add(m,h?[0,-15]:[22,0]),s,'sm',h?'middle':'start'):'')};
+const bat=(x,y,s)=>ln([x,y-28],[x,y-6])+ln([x-12,y-6],[x+12,y-6],'thick')+ln([x-6,y+2],[x+6,y+2],'thick')+ln([x,y+2],[x,y+28])+(s?tx([x-18,y-2],s,'sm','end'):'');
+const lp=(a,b)=>ln(a,b);
+on(/([\d.]+) Ω과 ([\d.]+) Ω인 저항을 직렬로 연결했을 때 전체 저항/,m=>svg(bat(50,90,'')+lp([50,62],[50,40])+lp([50,40],[70,40])+res([70,40],[130,40],m[1]+' Ω')+res([130,40],[200,40],m[2]+' Ω')+lp([200,40],[220,40])+lp([220,40],[220,140])+lp([220,140],[50,140])+lp([50,140],[50,118]),H,'직렬 연결 · 전체 저항은 ?'));
+const par=(r1,r2,v)=>bat(40,90,v)+lp([40,62],[40,30])+lp([40,30],[200,30])+lp([40,118],[40,150])+lp([40,150],[200,150])+lp([110,30],[110,58])+res([110,58],[110,122],r1)+lp([110,122],[110,150])+lp([200,30],[200,58])+res([200,58],[200,122],r2)+lp([200,122],[200,150]);
+on(/([\d.]+) Ω과 ([\d.]+) Ω인 저항을 병렬로 연결했을 때 전체 저항/,m=>svg(par(m[1]+' Ω',m[2]+' Ω',''),H,'병렬 연결 · 전체 저항은 ?'));
+on(/([\d.]+) V 전원에 ([\d.]+) Ω과 ([\d.]+) Ω 저항을 병렬로 연결했어요. ([\d.]+) Ω 저항에 흐르는 전류/,m=>svg(par(m[2]+' Ω',m[3]+' Ω',m[1]+' V'),H,`${m[4]} Ω 저항에 흐르는 전류는 ?`));
+const one=(r,v,i)=>svg(bat(60,90,v)+lp([60,62],[60,40])+lp([60,40],[110,40])+res([110,40],[180,40],r)+lp([180,40],[210,40])+lp([210,40],[210,140])+lp([210,140],[60,140])+lp([60,140],[60,118])+`<path d="M150 140 l-10 -5 v10z" class="arrow"/>`+tx([140,156],i,i.includes('?')?'q':'sm'));
+on(/([\d.]+) Ω인 저항에 ([\d.]+) V의 전압을 걸면 흐르는 전류/,m=>one(m[1]+' Ω',m[2]+' V','I = ?'));
+on(/([\d.]+) Ω인 저항에 ([\d.]+) A의 전류가 흐를 때 저항 양 끝의 전압/,m=>one(m[1]+' Ω','V = ?','I = '+m[2]+' A'));
+on(/전압이 ([\d.]+) V일 때 ([\d.]+) A의 전류가 흐르는 니크롬선의 저항/,m=>one('R = ?',m[1]+' V','I = '+m[2]+' A'));
+
+/* ── 초5 도형 ── */
+on(/가로 ([\d.]+) ?cm, 세로 ([\d.]+) ?cm, 높이 ([\d.]+) ?cm인 직육면체/,m=>{const a=N(m[1]),b=N(m[2]),c=N(m[3]),k=Math.min(130/(a+b*.5),110/(c+b*.5)),w=a*k,d=b*k*.5,h=c*k,x=(W-w-d)/2,y=(H+h-d)/2+4;
+  const P=[[x,y],[x+w,y],[x+w,y-h],[x,y-h]],Bk=P.map(p=>add(p,[d,-d]));
+  return svg(ln(Bk[0],Bk[1],'thin dash')+ln(Bk[0],Bk[3],'thin dash')+ln(P[0],Bk[0],'thin dash')+pg(P,'sh')+pg([P[3],P[2],Bk[2],Bk[3]],'sh')+pg([P[1],Bk[1],Bk[2],P[2]],'sh')+tx(add(mid(P[0],P[1]),[0,12]),m[1]+' cm','sm')+tx(add(mid(P[1],Bk[1]),[14,6]),m[2]+' cm','sm','start')+tx(add(mid(P[0],P[3]),[-6,0]),m[3]+' cm','sm','end'))});
+on(/한 모서리가 ([\d.]+) ?cm인 정육면체/,m=>{const s=80,d=34,x=70,y=140,P=[[x,y],[x+s,y],[x+s,y-s],[x,y-s]],Bk=P.map(p=>add(p,[d,-d]));
+  return svg(ln(Bk[0],Bk[1],'thin dash')+ln(Bk[0],Bk[3],'thin dash')+ln(P[0],Bk[0],'thin dash')+pg(P,'sh')+pg([P[3],P[2],Bk[2],Bk[3]],'sh')+pg([P[1],Bk[1],Bk[2],P[2]],'sh')+tx(add(mid(P[0],P[1]),[0,12]),m[1]+' cm','sm'))});
+on(/가로 ([\d.]+) ?cm, 세로 ([\d.]+) ?cm인 직사각형의 (넓이|둘레)/,m=>{const [A,B,C,D]=fit([[0,N(m[2])],[0,0],[N(m[1]),0],[N(m[1]),N(m[2])]],30);const c=cen([A,B,C,D]);return svg(pg([A,B,C,D],'sh')+rt(B,A,C)+side(B,C,c,m[1]+' cm')+side(A,B,c,m[2]+' cm'),H,m[3]+'는 ?')});
+on(/한 변이 ([\d.]+) ?cm인 정사각형의 (넓이|둘레)/,m=>{const A=[85,25],B=[85,145],C=[205,145],D=[205,25],c=cen([A,B,C,D]);return svg(pg([A,B,C,D],'sh')+rt(B,A,C)+tick(A,B)+tick(B,C)+tick(C,D)+tick(D,A)+side(B,C,c,m[1]+' cm'),H,m[2]+'는 ?')});
+on(/한 변이 ([\d.]+) ?cm인 정(오|육|팔)각형의 둘레/,m=>{const n={오:5,육:6,팔:8}[m[2]],O=[130,86],r=66,ps=[...Array(n)].map((_,i)=>{const t=-Math.PI/2+Math.PI/n+2*Math.PI*i/n;return [O[0]+r*Math.cos(t),O[1]+r*Math.sin(t)]});
+  return svg(pg(ps,'sh')+ps.map((p,i)=>tick(p,ps[(i+1)%n])).join('')+side(ps[0],ps[1],O,m[1]+' cm'),H,'둘레는 ?')});
+on(/밑변이 ([\d.]+) ?cm, 높이가 ([\d.]+) ?cm인 삼각형의 넓이/,m=>{const A=[110,22],B=[40,145],C=[220,145],Hh=[110,145];return svg(pg([A,B,C],'sh')+ln(A,Hh,'hl dash')+rt(Hh,C,A)+side(B,C,cen([A,B,C]),m[1]+' cm')+tx([118,90],m[2]+' cm','sm hl','start'),H,'넓이는 ?')});
+on(/넓이가 ([\d.]+) ?cm²이고 밑변이 ([\d.]+) ?cm인 삼각형의 높이/,m=>{const A=[110,22],B=[40,145],C=[220,145],Hh=[110,145];return svg(pg([A,B,C],'sh')+ln(A,Hh,'hl dash')+rt(Hh,C,A)+side(B,C,cen([A,B,C]),m[2]+' cm')+tx([118,90],Q,'q','start'),H,`넓이 ${m[1]} cm²`)});
+const PG5=(b,hh,q)=>{const A=[80,30],B=[40,142],C=[200,142],D=[240,30],Hh=[80,142];return svg(pg([A,B,C,D],'sh')+ln(A,Hh,'hl dash')+rt(Hh,C,A)+side(B,C,cen([A,B,C,D]),b)+tx([88,90],hh,hh===Q?'q':'sm hl','start'),H,q)};
+on(/밑변이 ([\d.]+) ?cm, 높이가 ([\d.]+) ?cm인 평행사변형의 넓이/,m=>PG5(m[1]+' cm',m[2]+' cm','넓이는 ?'));
+on(/넓이가 ([\d.]+) ?cm²이고 밑변이 ([\d.]+) ?cm인 평행사변형의 높이/,m=>PG5(m[2]+' cm',Q,`넓이 ${m[1]} cm²`));
+on(/두 변의 길이가 ([\d.]+) ?cm, ([\d.]+) ?cm인 평행사변형의 둘레/,m=>{const t=PAR();return svg(t.base.replace(/<text[^>]*class="vx"[^>]*>[^<]*<\/text>/g,'')+side(t.A,t.B,t.c,m[2]+' cm')+side(t.B,t.C,t.c,m[1]+' cm'),H,'둘레는 ?')});
+on(/윗변 ([\d.]+) ?cm, 아랫변 ([\d.]+) ?cm, 높이 ([\d.]+) ?cm인 사다리꼴의 넓이/,m=>{const A=[85,30],D=[175,30],B=[35,142],C=[225,142],Hh=[85,142];return svg(pg([A,B,C,D],'sh')+ln(A,Hh,'hl dash')+rt(Hh,C,A)+side(A,D,[130,90],m[1]+' cm')+side(B,C,[130,90],m[2]+' cm')+tx([93,90],m[3]+' cm','sm hl','start'),H,'넓이는 ?')});
+on(/삼각형 ㄱㄴㄷ과 삼각형 ㄹㅁㅂ은 서로 합동이에요\(ㄱ↔ㄹ, ㄴ↔ㅁ, ㄷ↔ㅂ\). 변 ㄱㄴ = ([\d.]+) ?cm, 변 ㄴㄷ = ([\d.]+) ?cm, 변 ㄷㄱ = ([\d.]+) ?cm일 때 변 (ㄹㅁ|ㅁㅂ|ㅂㄹ)/,m=>{
+  const T1=[[52,28],[16,138],[100,138]],T2=T1.map(p=>[p[0]+138,p[1]]),c1=cen(T1),c2=cen(T2),k={ㄹㅁ:[0,1],ㅁㅂ:[1,2],ㅂㄹ:[2,0]}[m[4]];
+  return svg(pg(T1,'sh')+pg(T2,'sh')+vlab(T1,['ㄱ','ㄴ','ㄷ'])+vlab(T2,['ㄹ','ㅁ','ㅂ'])+side(T1[0],T1[1],c1,m[1])+side(T1[1],T1[2],c1,m[2])+side(T1[2],T1[0],c1,m[3])+side(T2[k[0]],T2[k[1]],c2,Q,'q'),H,'단위: cm')});
+
+window.qfigOf=it=>{if(!it||!it.q)return '';const q=String(it.q);for(const [re,fn] of F){const m=q.match(re);if(m){try{return fn(m)}catch(e){return ''}}}return ''};
+
+// 문제 화면: 문제 글 아래에 그림
+const _rq=renderQ;renderQ=function(){_rq.apply(this,arguments);document.querySelectorAll('#qcard .qfig').forEach(x=>x.remove());const it=Q&&Q.items[Q.i];if(!it)return;
+  const h=qfigOf(it);if(h)$('#qtext').insertAdjacentHTML('afterend',h)};
+
+const st=document.createElement('style');st.textContent=`
+.qfig{margin:10px 0 2px;padding:8px;border-radius:14px;background:var(--grid);color:var(--ink)}
+.qfig svg{display:block;width:100%;max-width:340px;height:auto;margin:0 auto;overflow:visible}
+.qfig figcaption{text-align:center;font-size:13px;color:var(--muted);margin-top:4px}
+.qfig line,.qfig path,.qfig polygon,.qfig rect,.qfig circle{stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.qfig .sh{fill:color-mix(in srgb,var(--pen) 7%,var(--card))}
+.qfig .fillq{fill:color-mix(in srgb,#ff922b 32%,transparent);stroke:none}
+.qfig .thin{stroke-width:1.3}.qfig .dash{stroke-dasharray:5 4}.qfig .thick{stroke-width:3}
+.qfig .hl{stroke:var(--pen)}.qfig line.q,.qfig path.q{stroke:#f76707}
+.qfig .grid{stroke:color-mix(in srgb,var(--muted) 25%,transparent);stroke-width:.8}.qfig .ax{stroke-width:1.6}
+.qfig .res{fill:var(--card)}.qfig .arrow{fill:currentColor;stroke:none}.qfig .ray{stroke-width:2.4}
+.qfig .pt{fill:currentColor;stroke:none}.qfig .pt.hlp{fill:var(--pen)}
+.qfig text{fill:currentColor;stroke:none;font-size:13px;font-weight:600;font-family:var(--f-body)}
+.qfig text.sm{font-size:12px}.qfig text.vx{font-weight:800}.qfig text.hl{fill:var(--pen)}
+.qfig text.q{fill:#f76707;font-weight:900;font-size:15px}
+.qfig .arc{stroke-width:1.5}.qfig .arc.hl{stroke:var(--pen)}.qfig .arc.q{stroke:#f76707}
+`;document.head.appendChild(st);
+}
+
 /* ═══ kids+shop 끝 ═══ */
 if(!new URLSearchParams(location.search).get('room'))show('home');
 </script>
