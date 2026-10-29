@@ -4923,7 +4923,8 @@ html.kid .modal .box,html.kid .modal>div{border-radius:26px}
 .kstyle{display:flex;gap:8px}.kstyle .btn{flex:1}.kstyle .btn.on{outline:3px solid var(--pen)}
 `;document.head.appendChild(st);
 
-const kidOn=()=>S.kidUI!==false;
+const kidOn=()=>S.kidUI==null?S.grade==='e5':S.kidUI!==false; // 정해 두지 않았으면 초5는 친근한 화면, 중2는 중학생 화면
+if(S.grade!=='e5'&&!S.teen1){S.teen1=1;delete S.kidUI;save()} // 중2는 한 번 중학생 화면으로 바꿔 준다(보호자 요청 2026-10-29)
 const apply=()=>{document.documentElement.classList.toggle('kid',kidOn());try{document.documentElement.style.setProperty('--kmas','url("data:image/svg+xml;utf8,'+encodeURIComponent(charSVG(52))+'")')}catch(e){}};
 // 받침에 따라 "민지야 / 지민아"
 const callName=n=>{const c=n.charCodeAt(n.length-1);return n+(c>=0xAC00&&c<=0xD7A3&&(c-0xAC00)%28?'아':'야')};
@@ -4950,7 +4951,7 @@ const _res=resolve;resolve=function(ok,o={}){const was=Q.answered;_res.apply(thi
 // 나·상점: 화면 스타일 고르기
 const _show=show;show=function(id){_show.apply(this,arguments);if(id==='me'&&!document.getElementById('kStyle')){
   const c=document.createElement('div');c.className='card';c.id='kStyle';
-  c.innerHTML='<div class="cardhead"><h3>화면 스타일</h3></div><div class="kstyle"><button class="btn" data-k="1">🧸 친근한 화면</button><button class="btn" data-k="0">📓 기본 화면</button></div>';
+  c.innerHTML='<div class="cardhead"><h3>화면 스타일</h3></div><div class="kstyle"><button class="btn" data-k="1">🧸 친근한 화면</button><button class="btn" data-k="0">✨ 중학생 화면</button></div>';
   const me=$('#me .topbar');me.insertAdjacentElement('afterend',c);
   const mark=()=>c.querySelectorAll('[data-k]').forEach(b=>b.classList.toggle('on',(b.dataset.k==='1')===kidOn()));mark();
   c.querySelectorAll('[data-k]').forEach(b=>b.onclick=()=>{S.kidUI=b.dataset.k==='1';save();apply();mark()});
@@ -5694,7 +5695,7 @@ meSec.querySelector('.topbar').insertAdjacentHTML('beforeend',bell());
 const hp=document.querySelector('#home .topbar .pills');hp.insertAdjacentHTML('beforeend','<span class="pill lvp" id="pLv" title="내 캐릭터 보기">⭐ <span class="num">Lv.1</span></span>'+bell());
 document.getElementById('pLv').onclick=()=>show('char');
 const subjHead=document.querySelector('#home .homegrid > .screen:last-child .cardhead');
-if(subjHead)subjHead.innerHTML='<h3>어떤 이야기로 떠나 볼까?</h3><span class="label">칸을 누르면 목차가 열려요</span>';
+if(subjHead)subjHead.innerHTML=document.documentElement.classList.contains('teen')?'<h3>과목</h3><span class="label">누르면 단원 목차가 열려요</span>':'<h3>어떤 이야기로 떠나 볼까?</h3><span class="label">칸을 누르면 목차가 열려요</span>';
 
 /* 아래 탭 */
 const TABS=[['home','📚','공부'],['mission','🎯','미션'],['sched','📅','일정'],['char','🐣','캐릭터'],['me','⚙️','나']];
@@ -6048,6 +6049,62 @@ const st=document.createElement('style');st.textContent=`
 .tutor .sime{margin:0}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .tier.t0{--tc:#69db7c}:root:not([data-theme="light"]) .tier.t1{--tc:#74c0fc}:root:not([data-theme="light"]) .tier.t2{--tc:#b197fc}:root:not([data-theme="light"]) .tier.t3{--tc:#ff8787}}
 `;document.head.appendChild(st);
+}
+
+/* ───────── 중학생 화면 (깔끔한 화면) ───────── */
+// 중2는 기본으로 이 화면: 만화·말풍선·햇살 무늬를 걷어 내고, 단정한 글꼴과 부드러운 카드로 보여 준다.
+// 친근한 화면(html.kid)이 꺼져 있으면 html.teen 이 켜진다. 나 → 화면 스타일에서 바꿀 수 있다.
+{
+const fl=document.createElement('link');fl.rel='stylesheet';fl.href='https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;800;900&display=swap';document.head.appendChild(fl);
+const st=document.createElement('style');st.textContent=`
+html.teen{--f-display:"Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif;--f-body:"Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+  --paper:#f4f5f9;--card:#ffffff;--line:#e7e9f0;--grid:#eef0f6;--ink:#191c24;--muted:#6b7280;--pen:#5b5bf0;--pen-ink:#ffffff;--marker:#ffd43b;
+  --shadow:0 1px 2px rgba(20,24,40,.04),0 8px 24px -14px rgba(20,24,40,.18);--tg1:#7c5cff;--tg2:#3b82f6;--wtk:transparent}
+@media (prefers-color-scheme: dark){html.teen:not([data-theme="light"]){--paper:#0f1117;--card:#171a23;--line:#262a36;--grid:#1e2230;--ink:#eceef4;--muted:#9aa1b2;--pen:#8b8bff;--shadow:0 1px 2px rgba(0,0,0,.3),0 10px 28px -16px rgba(0,0,0,.7)}}
+html.teen[data-theme="dark"]{--paper:#0f1117;--card:#171a23;--line:#262a36;--grid:#1e2230;--ink:#eceef4;--muted:#9aa1b2;--pen:#8b8bff;--shadow:0 1px 2px rgba(0,0,0,.3),0 10px 28px -16px rgba(0,0,0,.7)}
+html.teen body{background-image:radial-gradient(1200px 500px at 100% -10%,rgba(124,92,255,.10),transparent 60%),radial-gradient(900px 400px at -10% 0%,rgba(59,130,246,.08),transparent 60%);background-size:auto;background-attachment:fixed;letter-spacing:-.01em}
+html.teen h1,html.teen h2,html.teen h3{font-weight:800;letter-spacing:-.02em}
+html.teen .brand{font-weight:900;letter-spacing:-.03em}
+html.teen .brand mark{background:linear-gradient(90deg,var(--tg1),var(--tg2));-webkit-background-clip:text;background-clip:text;color:transparent;padding:0}
+html.teen .card{border:1px solid var(--line);border-radius:20px}
+html.teen .pill{border:1px solid var(--line);box-shadow:none}
+html.teen .btn{border-radius:14px;box-shadow:none;font-weight:700}
+html.teen .btn.primary{background:linear-gradient(135deg,var(--tg1),var(--tg2));border:0;color:#fff}
+html.teen .btn.marker{background:var(--ink);color:var(--card);border:0}
+html.teen .nav{background:color-mix(in srgb,var(--card) 82%,transparent);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}
+html.teen .bar>i{background:linear-gradient(90deg,var(--tg1),var(--tg2))}
+/* 과목 칸: 만화 장면 대신 아이콘 타일 */
+html.teen .subjects .subj.wt{border:1px solid var(--line);border-radius:18px;box-shadow:var(--shadow);transform:none!important;flex-direction:row;align-items:center;gap:12px;padding:12px}
+html.teen .subjects .subj.wt:active{transform:scale(.98)!important;box-shadow:none}
+html.teen .wt-scene{flex:0 0 52px;width:52px;height:52px;border:0;border-radius:15px;background:linear-gradient(135deg,hsl(var(--h) 85% 68%),hsl(calc(var(--h) + 30) 80% 58%))!important;display:grid;place-items:center}
+html.teen .wt-scene::before,html.teen .wt-scene::after,html.teen .wt-bub,html.teen .wt-scene .e2,html.teen .wt-scene .e3{display:none}
+html.teen .wt-scene .e1{position:static;font-size:28px;filter:none}
+html.teen .wt-foot{flex:1;min-width:0;padding:0;gap:6px}
+html.teen .wt-nm{font-size:16px;font-weight:800}
+html.teen .xbr{border:0;height:5px;background:var(--grid)}
+html.teen .xbr>i{background:linear-gradient(90deg,var(--tg1),var(--tg2))}
+html.teen .req{background:none;color:var(--pen);border:1px solid color-mix(in srgb,var(--pen) 40%,transparent);border-radius:99px;font-size:10px;padding:0 6px}
+html.teen .req::before{content:none}
+/* 오늘은 무슨 날: 만화 칸 대신 깔끔한 카드 */
+html.teen .dc-strip{grid-template-columns:76px minmax(0,1fr);align-items:stretch}
+html.teen .dc-p{border:0;border-radius:16px;min-height:0}
+html.teen .dc-p1{background:linear-gradient(135deg,var(--tg1),var(--tg2));padding:10px 4px;gap:4px}
+html.teen .dc-p1 .dc-e{font-size:34px;animation:none;filter:none}
+html.teen .dc-p1 .dc-e.txt{width:44px;height:44px;font-size:24px;border:0;border-radius:12px}
+html.teen .dc-p1 b{transform:none;border:0;background:rgba(255,255,255,.22);color:#fff;font-size:11px;font-weight:700;padding:2px 6px;border-radius:99px}
+html.teen .dc-p2{background:var(--grid);background-image:none;padding:12px 14px;align-items:center}
+html.teen .dc-m{display:none}
+html.teen .dc-bub{background:none;color:var(--ink);border:0;padding:0;font-size:14.5px}
+html.teen .dc-bub::before,html.teen .dc-bub::after{content:none}
+html.teen .dc-bub em{color:var(--pen);font-size:12px;letter-spacing:.02em}
+html.teen .dc-head b{font-weight:800}
+html.teen .wt-today{top:8px;right:8px;left:auto;transform:none;background:var(--pen);color:#fff;border:0;box-shadow:none;font-size:10px;font-weight:700;padding:2px 7px;border-radius:99px;font-family:var(--f-body)}
+html.teen .subjects .subj.wt{position:relative}
+@media (max-width:359px){html.teen .dc-strip{grid-template-columns:1fr}}
+`;document.head.appendChild(st);
+const apply=()=>{const t=!document.documentElement.classList.contains('kid');document.documentElement.classList.toggle('teen',t);
+  const h=document.querySelector('#home .homegrid > .screen:last-child .cardhead');if(h&&h.querySelector('h3'))h.innerHTML=t?'<h3>과목</h3><span class="label">누르면 단원 목차가 열려요</span>':'<h3>어떤 이야기로 떠나 볼까?</h3><span class="label">칸을 누르면 목차가 열려요</span>'};
+apply();new MutationObserver(apply).observe(document.documentElement,{attributes:true,attributeFilter:['class']});
 }
 
 /* ═══ kids+shop 끝 ═══ */
